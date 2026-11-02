@@ -6,12 +6,12 @@ $uid = (int)$_SESSION['user_id'];
 
 // mood name => [face, css class]
 $moods = [
-    'Great'      => ['😄', 'great'],
-    'Good'       => ['🙂', 'good'],
-    'Okay'       => ['😐', 'okay'],
-    'Low'        => ['😟', 'low'],
-    'Frustrated' => ['😠', 'frustrated'],
-    'Tired'      => ['😴', 'tired'],
+    'Great'      => ['', 'great'],
+    'Good'       => ['', 'good'],
+    'Okay'       => ['', 'okay'],
+    'Low'        => ['', 'low'],
+    'Frustrated' => ['', 'frustrated'],
+    'Tired'      => ['', 'tired'],
 ];
 $todayStr   = date('Y-m-d');
 $errors     = [];     // today's form
@@ -114,7 +114,7 @@ render_header('Mood', 'mood');
             <?php foreach ($moods as $name => [$face, $cls]): ?>
                 <label class="mood-option">
                     <input type="radio" name="mood" value="<?= e($name) ?>" <?= $selected === $name ? 'checked' : '' ?>>
-                    <span class="face"><?= $face ?></span>
+                    <span class="face"><?= mood_face($name, 46) ?></span>
                     <span class="mood-name"><?= e($name) ?></span>
                 </label>
             <?php endforeach; ?>
@@ -149,9 +149,9 @@ render_header('Mood', 'mood');
         ?>
             <tr>
                 <td><?= e(date('M j, Y', strtotime($r['log_date']))) ?></td>
-                <td><span class="mood-tag <?= e($cls) ?>"><?= $face ?> <?= e($r['mood']) ?></span></td>
+                <td><span class="mood-tag <?= e($cls) ?>"><?= mood_face($r['mood'], 18) ?> <?= e($r['mood']) ?></span></td>
                 <td><?= $note !== null ? '<span class="diary-note">' . e($note) . '</span>' : '<span class="muted">—</span>' ?></td>
-                <td class="row-actions"><button type="button" class="btn-ghost btn-edit row-edit" data-mood="<?= e($json) ?>">&#9998; Edit</button></td>
+                <td class="row-actions"><button type="button" class="btn-ghost btn-edit row-edit" data-mood="<?= e($json) ?>"><?= icon('edit', 14) ?> Edit</button></td>
             </tr>
         <?php endforeach; ?>
         </tbody>
@@ -183,7 +183,7 @@ render_header('Mood', 'mood');
             <?php foreach ($moods as $name => [$face, $cls]): ?>
                 <label class="mood-option">
                     <input type="radio" name="mood" value="<?= e($name) ?>">
-                    <span class="face"><?= $face ?></span>
+                    <span class="face"><?= mood_face($name, 46) ?></span>
                     <span class="mood-name"><?= e($name) ?></span>
                 </label>
             <?php endforeach; ?>

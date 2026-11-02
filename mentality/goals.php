@@ -296,7 +296,7 @@ render_header('Goals', 'goals');
             <h3><?= e($g['title']) ?></h3>
             <div class="goal-actions">
                 <span class="status <?= $statusClass ?>"><?= e($statusLabel) ?></span>
-                <button type="button" class="btn-ghost btn-edit" data-goal="<?= e($goalJson) ?>" title="Edit this goal">&#9998; Edit</button>
+                <button type="button" class="btn-ghost btn-edit" data-goal="<?= e($goalJson) ?>" title="Edit this goal"><?= icon('edit', 14) ?> Edit</button>
             </div>
         </div>
         <?php if ($category !== ''): ?><div class="muted small"><?= e($category) ?></div><?php endif; ?>

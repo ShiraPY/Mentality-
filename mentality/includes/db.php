@@ -4,8 +4,8 @@
 
 $DB_HOST = 'localhost';
 $DB_NAME = 'mentality_db';
-$DB_USER = 'root';   // XAMPP default. We will replace this with a limited user later (security).
-$DB_PASS = '';       // XAMPP default is an empty password.
+$DB_USER = 'root';   // limited user - create it by importing sql/11_app_user.sql
+$DB_PASS = '';
 
 $options = [
     PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,   // show real errors while developing

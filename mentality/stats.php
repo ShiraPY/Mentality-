@@ -108,6 +108,25 @@ for ($m = 1; $m <= 12; $m++) {
 }
 $thisMonthPct = $months[(int)$today->format('n')]['pct'];
 
+// ---- Focus areas: GROUP BY + HAVING (only areas you actually ticked in this period)
+$stmt = $pdo->prepare(
+    'SELECT COALESCE(p.name, c.name) AS area,
+            COUNT(DISTINCT h.habit_id)            AS habit_count,
+            SUM(CASE WHEN l.completed = 1 THEN 1 ELSE 0 END) AS ticks
+     FROM habits h
+     JOIN habit_categories c ON c.category_id = h.category_id
+     LEFT JOIN habit_categories p ON p.category_id = c.parent_id
+     LEFT JOIN habit_logs l ON l.habit_id = h.habit_id AND l.log_date BETWEEN ? AND ?
+     WHERE h.user_id = ? AND h.is_active = 1
+     GROUP BY COALESCE(p.name, c.name)
+     HAVING SUM(CASE WHEN l.completed = 1 THEN 1 ELSE 0 END) > 0
+     ORDER BY ticks DESC'
+);
+$stmt->execute([$startStr, $todayStr, $uid]);
+$focusAreas = $stmt->fetchAll();
+$focusMax = 0;
+foreach ($focusAreas as $fa) { $focusMax = max($focusMax, (int)$fa['ticks']); }
+
 render_header('Stats', 'stats');
 ?>
 <h1>Statistics</h1>
@@ -154,6 +173,18 @@ render_header('Stats', 'stats');
             <?php endforeach; ?>
         </div>
     </div>
+</div>
+<div class="panel">
+    <h2>Focus Areas (<?= e($periodLabel) ?>)</h2>
+    <?php if (!$focusAreas): ?>
+        <p class="muted">No ticks yet in this period. Tick a habit on your Dashboard and its area will show up here.</p>
+    <?php else: foreach ($focusAreas as $fa): $w = $focusMax > 0 ? (int)round($fa['ticks'] / $focusMax * 100) : 0; ?>
+        <div class="perf-row">
+            <div class="perf-name"><?= e($fa['area']) ?><br><small class="muted"><?= (int)$fa['habit_count'] ?> habit<?= (int)$fa['habit_count'] === 1 ? '' : 's' ?></small></div>
+            <div class="progress"><div class="bar" style="width: <?= $w ?>%"></div></div>
+            <div class="perf-pct"><?= (int)$fa['ticks'] ?></div>
+        </div>
+    <?php endforeach; endif; ?>
 </div>
 <?php endif; ?>
 <?php render_footer(); ?>

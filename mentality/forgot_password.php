@@ -21,7 +21,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $user = $stmt->fetch();
 
         if (!$user) {
-            $error = 'No account is connected to that email.';
+            // Same behaviour as a real request, so attackers cannot tell which emails exist.
+            $_SESSION['reset_user_id'] = -1;
+            unset($_SESSION['reset_verified'], $_SESSION['demo_inbox']);
+            header('Location: ' . BASE_URL . '/verify_pin.php');
+            exit;
         } else {
             $pin = (string)random_int(100000, 999999);          // 6-digit code
             try {
@@ -57,22 +61,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Forgot Password - Mentality</title>
     <link rel="stylesheet" href="<?= BASE_URL ?>/assets/style.css">
 </head>
-<body>
+<body class="auth-page">
 <div class="center">
   <form class="card" method="post" novalidate>
+    <?= auth_brand() ?>
     <div class="steps"><span class="step active">1 Email</span><span class="step">2 Verify PIN</span><span class="step">3 New Password</span></div>
     <h1>Reset Your Password</h1>
-    <p class="sub">Enter your registered email address.</p>
+    <p class="sub">Enter your registered email address. If it matches an account, we will send a code.</p>
 
     <?php if ($error): ?><div class="alert alert-error"><?= e($error) ?></div><?php endif; ?>
 
     <?= csrf_field() ?>
     <label for="email">Email Address</label>
-    <input type="email" id="email" name="email" value="<?= e($email) ?>" autofocus>
+    <div class="field"><?= icon('mail', 18, 'icon-left') ?><input type="email" id="email" name="email" value="<?= e($email) ?>" autofocus></div>
 
     <button type="submit">Send PIN</button>
     <div class="link-row"><a href="login.php">&larr; Back to Login</a></div>
   </form>
 </div>
+<script src="<?= BASE_URL ?>/assets/auth.js"></script>
 </body>
 </html>

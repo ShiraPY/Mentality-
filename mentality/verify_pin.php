@@ -7,6 +7,13 @@ $uid   = (int)$_SESSION['reset_user_id'];
 $error = '';
 $maxAttempts = 5;
 
+function ip_pin_throttled(PDO $pdo): bool {
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM audit_logs WHERE action = 'RESET_PIN_FAILED'
+                           AND ip_address = ? AND created_at > (NOW() - INTERVAL 15 MINUTE)");
+    $stmt->execute([$_SERVER['REMOTE_ADDR'] ?? '']);
+    return (int)$stmt->fetchColumn() >= 10;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $pin = trim($_POST['pin'] ?? '');
 
@@ -14,6 +21,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Your session expired. Please try again.';
     } elseif (!preg_match('/^[0-9]{6}$/', $pin)) {
         $error = 'Please enter the 6-digit code (numbers only).';
+    } elseif (ip_pin_throttled($pdo)) {
+        $error = 'Too many wrong codes from this device. Please wait 15 minutes.';
     } else {
         $stmt = $pdo->prepare('SELECT reset_id, pin_hash, attempts FROM password_resets
                                WHERE user_id = ? AND is_used = 0 AND expires_at > NOW()
@@ -22,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $row = $stmt->fetch();
 
         if (!$row) {
-            $error = 'This code has expired or was already used. Please request a new one.';
+            $error = 'Invalid or expired code. Please try again or request a new one.';
         } elseif ((int)$row['attempts'] >= $maxAttempts) {
             $pdo->prepare('UPDATE password_resets SET is_used = 1 WHERE reset_id = ?')->execute([$row['reset_id']]);
             $error = 'Too many wrong attempts. Please request a new code.';
@@ -49,9 +58,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Verify PIN - Mentality</title>
     <link rel="stylesheet" href="<?= BASE_URL ?>/assets/style.css">
 </head>
-<body>
+<body class="auth-page">
 <div class="center">
   <form class="card" method="post" novalidate>
+    <?= auth_brand() ?>
     <div class="steps"><span class="step done">1 Email</span><span class="step active">2 Verify PIN</span><span class="step">3 New Password</span></div>
     <h1>Enter Verification Code</h1>
     <p class="sub">We sent a 6-digit code to your email.</p>
@@ -69,5 +79,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="link-row">Didn't get it? <a href="forgot_password.php">Send a new code</a></div>
   </form>
 </div>
+<script src="<?= BASE_URL ?>/assets/auth.js"></script>
 </body>
 </html>

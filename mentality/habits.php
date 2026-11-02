@@ -113,7 +113,7 @@ render_header('My Habits', 'habits');
                 <td><?= $h['last_completed'] ? e(date('M j, Y', strtotime($h['last_completed']))) : '—' ?></td>
                 <td><?= $h['is_active'] ? 'Active' : 'Inactive' ?></td>
                 <td class="actions">
-                    <button type="button" class="btn-ghost btn-edit" data-habit="<?= e($json) ?>">&#9998; Edit</button>
+                    <button type="button" class="btn-ghost btn-edit" data-habit="<?= e($json) ?>"><?= icon('edit', 14) ?> Edit</button>
                     <form method="post" onsubmit="return confirm('<?= $h['is_active'] ? 'Deactivate this habit? Its history is kept.' : 'Reactivate this habit?' ?>');">
                         <?= csrf_field() ?>
                         <input type="hidden" name="habit_id" value="<?= (int)$h['habit_id'] ?>">

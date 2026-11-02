@@ -4,14 +4,19 @@
 
 define('BASE_URL', '/mentality');   // folder name inside htdocs
 date_default_timezone_set('Asia/Manila');
-define('APP_DEBUG', true);   // true = show technical error details while developing. Set to false before your defense.
+define('APP_DEBUG', false);   // true = show technical error details while developing. Set to false before your defense.
 
 if (session_status() === PHP_SESSION_NONE) {
-    session_set_cookie_params(['httponly' => true, 'samesite' => 'Lax']);
+    $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+    session_set_cookie_params(['httponly' => true, 'samesite' => 'Lax', 'secure' => $https]);
+    header('X-Frame-Options: SAMEORIGIN');
+    header('X-Content-Type-Options: nosniff');
+    header('Referrer-Policy: same-origin');
     session_start();
 }
 
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/icons.php';
 
 // Escape text before printing it in HTML (stops XSS).
 function e($value): string {

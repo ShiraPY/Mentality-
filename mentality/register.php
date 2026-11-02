@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/quotes.php';
 
 if (is_logged_in()) { header('Location: ' . BASE_URL . '/dashboard.php'); exit; }
 
@@ -69,6 +70,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
+// Puts the last two words of a quote in the accent colour (same as the login page).
+function quote_html(string $q): string {
+    $w = explode(' ', $q);
+    if (count($w) < 4) { return e($q); }
+    return e(implode(' ', array_slice($w, 0, -2))) . ' <span class="accent">' . e(implode(' ', array_slice($w, -2))) . '</span>';
+}
+$quotes = all_quotes();
+$first  = $quotes[array_rand($quotes)];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -78,34 +87,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Register - Mentality</title>
     <link rel="stylesheet" href="<?= BASE_URL ?>/assets/style.css">
 </head>
-<body>
-<div class="center">
-  <form class="card" method="post" novalidate>
-    <h1>Create Your Account</h1>
-    <p class="sub">Start building a better you.</p>
+<body class="login-page">
+<main class="lp">
 
-    <?php if ($success): ?>
-        <div class="alert alert-success">Registration successful! <a href="login.php">Log in now</a>.</div>
-    <?php endif; ?>
-    <?php if ($errors): ?>
-        <div class="alert alert-error"><ul><?php foreach ($errors as $err): ?><li><?= e($err) ?></li><?php endforeach; ?></ul></div>
-    <?php endif; ?>
+    <!-- LEFT: quotes, same as the login page -->
+    <section class="lp-left">
+        <div class="lp-wordmark">mentality</div>
+        <div class="lp-quote-wrap">
+            <p class="lp-label">A thought for today</p>
+            <h1 class="lp-quote" id="login-quote" data-quotes="<?= e(json_encode($quotes, JSON_UNESCAPED_UNICODE)) ?>"><?= quote_html($first) ?></h1>
+        </div>
+    </section>
 
-    <?= csrf_field() ?>
-    <label for="full_name">Full Name</label>
-    <input type="text" id="full_name" name="full_name" value="<?= e($old['full_name']) ?>">
-    <label for="username">Username</label>
-    <input type="text" id="username" name="username" value="<?= e($old['username']) ?>">
-    <label for="email">Email</label>
-    <input type="email" id="email" name="email" value="<?= e($old['email']) ?>">
-    <label for="password">Password</label>
-    <input type="password" id="password" name="password">
-    <label for="confirm_password">Confirm Password</label>
-    <input type="password" id="confirm_password" name="confirm_password">
+    <!-- RIGHT: the registration form -->
+    <section class="lp-right">
+        <form class="lp-form lp-form-register" method="post" novalidate>
+            <h2>Create your Mentality account</h2>
 
-    <button type="submit">Register</button>
-    <div class="link-row">Already have an account? <a href="login.php">Login</a></div>
-  </form>
-</div>
+            <?php if ($success): ?>
+                <div class="alert alert-success">Registration successful! <a href="login.php">Log in now</a>.</div>
+            <?php endif; ?>
+            <?php if ($errors): ?>
+                <div class="alert alert-error"><ul><?php foreach ($errors as $err): ?><li><?= e($err) ?></li><?php endforeach; ?></ul></div>
+            <?php endif; ?>
+
+            <?= csrf_field() ?>
+            <label class="sr-only" for="full_name">Full name</label>
+            <input class="lp-input" type="text" id="full_name" name="full_name" placeholder="Full name" value="<?= e($old['full_name']) ?>" autocomplete="name" autofocus>
+
+            <label class="sr-only" for="username">Username</label>
+            <input class="lp-input" type="text" id="username" name="username" placeholder="Username" value="<?= e($old['username']) ?>" autocomplete="username">
+
+            <label class="sr-only" for="email">Email</label>
+            <input class="lp-input" type="email" id="email" name="email" placeholder="Email" value="<?= e($old['email']) ?>" autocomplete="email">
+
+            <label class="sr-only" for="password">Password</label>
+            <div class="lp-pw">
+                <input class="lp-input" type="password" id="password" name="password" placeholder="Password" autocomplete="new-password">
+                <button type="button" class="toggle-pw" aria-label="Show password"><?= icon('eye', 20, 'i-on') ?><?= icon('eye-off', 20, 'i-off') ?></button>
+            </div>
+
+            <label class="sr-only" for="confirm_password">Confirm password</label>
+            <div class="lp-pw">
+                <input class="lp-input" type="password" id="confirm_password" name="confirm_password" placeholder="Confirm password" autocomplete="new-password">
+                <button type="button" class="toggle-pw" aria-label="Show password"><?= icon('eye', 20, 'i-on') ?><?= icon('eye-off', 20, 'i-off') ?></button>
+            </div>
+
+            <button type="submit" class="lp-btn">Register</button>
+            <a class="lp-create" href="login.php">Already have an account? Log in</a>
+            <div class="lp-foot">mentality</div>
+        </form>
+    </section>
+
+</main>
+<script src="<?= BASE_URL ?>/assets/auth.js"></script>
 </body>
-</html>
+</html> 

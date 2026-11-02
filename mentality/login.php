@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/quotes.php';
 
 if (is_logged_in()) { header('Location: ' . BASE_URL . '/dashboard.php'); exit; }
 
@@ -44,33 +45,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
+
+// Puts the last two words of a quote in the accent colour (the same idea as "you love." on Facebook's page).
+function quote_html(string $q): string {
+    $w = explode(' ', $q);
+    if (count($w) < 4) { return e($q); }
+    return e(implode(' ', array_slice($w, 0, -2))) . ' <span class="accent">' . e(implode(' ', array_slice($w, -2))) . '</span>';
+}
+$quotes = all_quotes();
+$first  = $quotes[array_rand($quotes)];
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Login - Mentality</title>
+    <title>Log in - Mentality</title>
     <link rel="stylesheet" href="<?= BASE_URL ?>/assets/style.css">
 </head>
-<body>
-<div class="center">
-  <form class="card" method="post" novalidate>
-    <h1>Welcome Back!</h1>
-    <p class="sub">Log in to continue your journey.</p>
+<body class="login-page">
+<main class="lp">
 
-    <?php if ($error): ?><div class="alert alert-error"><?= e($error) ?></div><?php endif; ?>
+    <!-- LEFT: quotes instead of a picture -->
+    <section class="lp-left">
+        <div class="lp-wordmark">mentality</div>
+        <div class="lp-quote-wrap">
+            <p class="lp-label">A thought for today</p>
+            <h1 class="lp-quote" id="login-quote" data-quotes="<?= e(json_encode($quotes, JSON_UNESCAPED_UNICODE)) ?>"><?= quote_html($first) ?></h1>
+        </div>
+    </section>
 
-    <?= csrf_field() ?>
-    <label for="login">Email or Username</label>
-    <input type="text" id="login" name="login" value="<?= e($login) ?>" autofocus>
-    <label for="password">Password</label>
-    <input type="password" id="password" name="password">
+    <!-- RIGHT: the login form -->
+    <section class="lp-right">
+        <form class="lp-form" method="post" novalidate>
+            <h2>Log in to Mentality</h2>
 
-    <button type="submit">Login</button>
-    <div class="link-row"><a href="forgot_password.php">Forgot Password?</a></div>
-    <div class="link-row">Don't have an account? <a href="register.php">Register</a></div>
-  </form>
-</div>
+            <?php if ($error): ?><div class="alert alert-error"><?= e($error) ?></div><?php endif; ?>
+
+            <?= csrf_field() ?>
+            <label class="sr-only" for="login">Email or username</label>
+            <input class="lp-input" type="text" id="login" name="login" placeholder="Email or username" value="<?= e($login) ?>" autocomplete="username" autofocus>
+
+            <label class="sr-only" for="password">Password</label>
+            <div class="lp-pw">
+                <input class="lp-input" type="password" id="password" name="password" placeholder="Password" autocomplete="current-password">
+                <button type="button" class="toggle-pw" aria-label="Show password"><?= icon('eye', 20, 'i-on') ?><?= icon('eye-off', 20, 'i-off') ?></button>
+            </div>
+
+            <button type="submit" class="lp-btn">Log in</button>
+            <a class="lp-forgot" href="forgot_password.php">Forgot password?</a>
+            <a class="lp-create" href="register.php">Create new account</a>
+            <div class="lp-foot">mentality</div>
+        </form>
+    </section>
+
+</main>
+<script src="<?= BASE_URL ?>/assets/auth.js"></script>
 </body>
 </html>

@@ -55,9 +55,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>New Password - Mentality</title>
     <link rel="stylesheet" href="<?= BASE_URL ?>/assets/style.css">
 </head>
-<body>
+<body class="auth-page">
 <div class="center">
   <form class="card" method="post" novalidate>
+    <?= auth_brand() ?>
     <div class="steps"><span class="step done">1 Email</span><span class="step done">2 Verify PIN</span><span class="step active">3 New Password</span></div>
     <h1>Create New Password</h1>
     <p class="sub">Enter your new password below.</p>
@@ -71,12 +72,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <?= csrf_field() ?>
         <label for="password">New Password</label>
-        <input type="password" id="password" name="password" autofocus>
+        <div class="field"><?= icon('lock', 18, 'icon-left') ?><input type="password" id="password" name="password" autofocus><button type="button" class="toggle-pw" aria-label="Show password"><?= icon('eye', 18, 'i-on') ?><?= icon('eye-off', 18, 'i-off') ?></button></div>
         <label for="confirm_password">Confirm Password</label>
-        <input type="password" id="confirm_password" name="confirm_password">
+        <div class="field"><?= icon('lock', 18, 'icon-left') ?><input type="password" id="confirm_password" name="confirm_password"><button type="button" class="toggle-pw" aria-label="Show password"><?= icon('eye', 18, 'i-on') ?><?= icon('eye-off', 18, 'i-off') ?></button></div>
         <button type="submit">Reset Password</button>
     <?php endif; ?>
   </form>
 </div>
+<script src="<?= BASE_URL ?>/assets/auth.js"></script>
 </body>
 </html>

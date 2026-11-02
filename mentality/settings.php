@@ -17,7 +17,7 @@ function ensure_upload_dir(): void {
 
 $pdo->prepare('INSERT IGNORE INTO user_settings (user_id) VALUES (?)')->execute([$uid]);
 
-$tabs = ['profile' => 'Profile', 'security' => 'Security', 'appearance' => 'Appearance', 'notifications' => 'Notifications'];
+$tabs = ['profile' => 'Profile', 'security' => 'Security', 'appearance' => 'Appearance', 'notifications' => 'Notifications', 'export' => 'Export'];
 if (can_backup()) { $tabs['backup'] = 'Backup'; }          // only admins and moderators see this tab
 $tab  = $_GET['tab'] ?? 'profile';
 if (!isset($tabs[$tab])) { $tab = 'profile'; }
@@ -226,6 +226,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect_to('settings.php?tab=appearance');
     }
 
+    // =============== EXPORT WHOLE DATABASE (admins only): make a fresh .sql file and download it at once ===============
+    if ($action === 'export_database') {
+        if (!can_backup()) {
+            flash('error', 'Only administrators can export the whole database.');
+            redirect_to('settings.php?tab=export');
+        }
+        try {
+            $b = create_backup($pdo);
+            log_audit($pdo, $uid, $_SESSION['username'], 'BACKUP_CREATE', 'database', null, 'Exported whole database: ' . $b['name'] . ' (' . format_bytes($b['size']) . ')');
+            header('Location: ' . BASE_URL . '/backup_download.php?file=' . urlencode($b['name']));
+            exit;
+        } catch (Throwable $ex) {
+            flash('error', APP_DEBUG ? 'Export failed: ' . $ex->getMessage() : 'The database could not be exported.');
+            redirect_to('settings.php?tab=export');
+        }
+    }
+
     // =============== BACKUP (admins and moderators only) ===============
     if ($action === 'create_backup') {
         if (!can_backup()) {
@@ -300,15 +317,6 @@ render_header('Settings', 'settings');
         <div class="form-actions"><button type="submit" class="btn-sm">Save Changes</button></div>
     </form>
 
-    <div class="settings-section">
-        <h2>Your data</h2>
-        <p class="muted small">Download a copy of your information as a spreadsheet (CSV) file.</p>
-        <div class="form-actions">
-            <a class="btn-ghost" href="export_data.php?type=habits">Habit history</a>
-            <a class="btn-ghost" href="export_data.php?type=moods">Moods</a>
-            <a class="btn-ghost" href="export_data.php?type=goals">Goals</a>
-        </div>
-    </div>
 
 <?php elseif ($tab === 'security'): ?>
     <h2>Security</h2>
@@ -359,9 +367,9 @@ render_header('Settings', 'settings');
             <h3>Theme</h3>
             <div class="mood-options" style="max-width:360px">
                 <label class="mood-option"><input type="radio" name="appearance" value="dark" <?= $ap['theme'] === 'dark' ? 'checked' : '' ?>>
-                    <span class="face">🌙</span><span class="mood-name">Dark</span></label>
+                    <span class="face"><?= icon('moon', 38) ?></span><span class="mood-name">Dark</span></label>
                 <label class="mood-option"><input type="radio" name="appearance" value="light" <?= $ap['theme'] === 'light' ? 'checked' : '' ?>>
-                    <span class="face">☀️</span><span class="mood-name">Light</span></label>
+                    <span class="face"><?= icon('sun', 38) ?></span><span class="mood-name">Light</span></label>
             </div>
         </div>
 
@@ -407,6 +415,41 @@ render_header('Settings', 'settings');
         <input type="hidden" name="action" value="appearance_reset">
         <button type="submit" class="btn-ghost">Reset colours and font to default</button>
     </form>
+
+<?php elseif ($tab === 'export'): ?>
+    <h2>Export My Data</h2>
+    <p class="muted small">Download a copy of your own information as a CSV file. It opens in Excel, Google Sheets or any spreadsheet app. Only <strong>your</strong> data is included.</p>
+
+    <div class="settings-section">
+        <h3>Habit history</h3>
+        <p class="muted small">Every habit you ticked or missed: habit name, category, date and whether it was completed.</p>
+        <div class="form-actions"><a class="btn-ghost" href="export_data.php?type=habits">Download habit history (CSV)</a></div>
+    </div>
+
+    <div class="settings-section">
+        <h3>Moods</h3>
+        <p class="muted small">Your daily mood log with your notes. Your notes are stored encrypted in the database but are <strong>decrypted in this file</strong>, so keep it private.</p>
+        <div class="form-actions"><a class="btn-ghost" href="export_data.php?type=moods">Download moods (CSV)</a></div>
+    </div>
+
+    <div class="settings-section">
+        <h3>Goals</h3>
+        <p class="muted small">Your goals with category, target date, progress percentage and status.</p>
+        <div class="form-actions"><a class="btn-ghost" href="export_data.php?type=goals">Download goals (CSV)</a></div>
+    </div>
+
+    <?php if (can_backup()): ?>
+    <div class="settings-section">
+        <h3>Whole database (administrators only)</h3>
+        <p class="muted small">Creates a fresh copy of <strong>every table</strong> (all users, habits, goals, moods, logs), plus the functions, procedures, views and triggers, as one <strong>.sql</strong> file. You can restore it later with phpMyAdmin's Import tab.</p>
+        <div class="alert alert-error" style="margin:10px 0"><strong>Keep this file private.</strong> It contains every account's email and password hash. Mood notes stay encrypted, and the key (<code>includes/mood.key</code>) is not included.</div>
+        <form method="post" onsubmit="return confirm('Export the whole database now? The file contains all accounts.');">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="export_database">
+            <div class="form-actions"><button type="submit" class="btn-sm">Download whole database (.sql)</button></div>
+        </form>
+    </div>
+    <?php endif; ?>
 
 <?php elseif ($tab === 'backup'): $backups = backup_list(); ?>
     <h2>Database Backup</h2>

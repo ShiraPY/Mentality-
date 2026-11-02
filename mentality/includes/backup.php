@@ -2,7 +2,7 @@
 // includes/backup.php - creates a full, restorable .sql backup of the database using plain PHP.
 //
 // WHO MAY USE IT: change this one line to ['admin'] if only administrators should be allowed.
-define('BACKUP_ROLES', ['admin', 'moderator']);
+define('BACKUP_ROLES', ['admin']);
 define('BACKUP_DIR', dirname(__DIR__) . '/backups');      // same folder that tools/backup.bat uses
 
 function can_backup(): bool {

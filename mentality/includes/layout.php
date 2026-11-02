@@ -41,7 +41,7 @@ function get_reminders(PDO $pdo, int $uid): array {
     $stmt->execute([$uid, $today, $today]);
     $left = (int)$stmt->fetchColumn();
     if ($left > 0) {
-        $out[] = ['icon' => '✅', 'url' => 'dashboard.php',
+        $out[] = ['icon' => 'habits', 'url' => 'dashboard.php',
                   'text' => 'You still have ' . $left . ' habit' . ($left === 1 ? '' : 's') . ' to complete today.'];
     }
 
@@ -49,7 +49,7 @@ function get_reminders(PDO $pdo, int $uid): array {
     $stmt = $pdo->prepare('SELECT COUNT(*) FROM mood_logs WHERE user_id = ? AND log_date = ?');
     $stmt->execute([$uid, $today]);
     if ((int)$stmt->fetchColumn() === 0) {
-        $out[] = ['icon' => '🙂', 'url' => 'mood.php', 'text' => 'You haven\'t logged your mood today.'];
+        $out[] = ['icon' => 'mood', 'url' => 'mood.php', 'text' => 'You haven\'t logged your mood today.'];
     }
 
     // Goals that are overdue or due within 3 days
@@ -64,7 +64,7 @@ function get_reminders(PDO $pdo, int $uid): array {
         if ($d < 0)       { $when = abs($d) . ' day' . (abs($d) === 1 ? '' : 's') . ' overdue'; }
         elseif ($d === 0) { $when = 'due today'; }
         else              { $when = 'due in ' . $d . ' day' . ($d === 1 ? '' : 's'); }
-        $out[] = ['icon' => '🎯', 'url' => 'goals.php', 'text' => 'Goal "' . $g['title'] . '" is ' . $when . '.'];
+        $out[] = ['icon' => 'goals', 'url' => 'goals.php', 'text' => 'Goal "' . $g['title'] . '" is ' . $when . '.'];
     }
     return $out;
 }
@@ -111,13 +111,13 @@ function render_header(string $title, string $active = ''): void {
 </head>
 <body>
 <header class="appbar">
-    <div class="brand">MENTALITY</div>
+    <div class="brand"><span>MENTALITY</span></div>
     <div class="appbar-right">
 
         <?php if ($isUser): ?>
         <div class="dropdown" data-dropdown>
             <button type="button" class="bell-btn" data-dropdown-toggle aria-label="Notifications" aria-haspopup="true">
-                &#128276;<?php if ($bellCount > 0): ?><span class="bell-badge"><?= $bellCount > 9 ? '9+' : $bellCount ?></span><?php endif; ?>
+                <?= icon('bell', 20) ?><?php if ($bellCount > 0): ?><span class="bell-badge"><?= $bellCount > 9 ? '9+' : $bellCount ?></span><?php endif; ?>
             </button>
             <div class="dropdown-menu wide">
                 <div class="dd-head">Notifications</div>
@@ -129,13 +129,13 @@ function render_header(string $title, string $active = ''): void {
                     <?php if ($reminders): ?>
                         <div class="dd-section">Reminders</div>
                         <?php foreach ($reminders as $r): ?>
-                            <a class="dd-note" href="<?= BASE_URL . '/' . e($r['url']) ?>"><span><?= $r['icon'] ?></span><span><?= e($r['text']) ?></span></a>
+                            <a class="dd-note" href="<?= BASE_URL . '/' . e($r['url']) ?>"><span><?= icon($r['icon'], 18) ?></span><span><?= e($r['text']) ?></span></a>
                         <?php endforeach; ?>
                     <?php endif; ?>
                     <?php if ($stored): ?>
                         <div class="dd-section">Recent</div>
                         <?php foreach ($stored as $n): ?>
-                            <div class="dd-note"><span>&#128172;</span><span><?= e($n['message']) ?><br><small class="muted"><?= e(date('M j, g:i A', strtotime($n['created_at']))) ?></small></span></div>
+                            <div class="dd-note"><span><?= icon('message', 18) ?></span><span><?= e($n['message']) ?><br><small class="muted"><?= e(date('M j, g:i A', strtotime($n['created_at']))) ?></small></span></div>
                         <?php endforeach; ?>
                         <div class="dd-foot">
                             <form method="post" action="<?= BASE_URL ?>/clear_notifications.php">
@@ -158,10 +158,10 @@ function render_header(string $title, string $active = ''): void {
             <div class="dropdown-menu">
                 <div class="dd-head"><?= e($name) ?><br><span class="badge"><?= e($role) ?></span></div>
                 <?php if ($canManage): ?>
-                    <a class="dd-item" href="<?= BASE_URL ?>/admin.php">&#128101; Manage Users</a>
+                    <a class="dd-item" href="<?= BASE_URL ?>/admin.php"><?= icon('users', 18) ?> Manage Users</a>
                 <?php endif; ?>
-                <a class="dd-item" href="<?= BASE_URL ?>/settings.php">&#9881; Settings</a>
-                <button type="button" class="dd-item" data-open-modal="logout-modal">&#10140; Log out</button>
+                <a class="dd-item" href="<?= BASE_URL ?>/settings.php"><?= icon('settings', 18) ?> Settings</a>
+                <button type="button" class="dd-item" data-open-modal="logout-modal"><?= icon('logout', 18) ?> Log out</button>
             </div>
         </div>
     </div>
@@ -184,7 +184,7 @@ function render_header(string $title, string $active = ''): void {
     <?php if ($tabs): ?>
         <nav class="tabs dash-tabs">
             <?php foreach ($tabs as $key => [$label, $file]): ?>
-                <a class="tab<?= $key === $active ? ' active' : '' ?>" href="<?= BASE_URL . '/' . $file ?>"><?= e($label) ?></a>
+                <a class="tab<?= $key === $active ? ' active' : '' ?>" href="<?= BASE_URL . '/' . $file ?>"><?= icon($key, 16) ?> <?= e($label) ?></a>
             <?php endforeach; ?>
         </nav>
     <?php endif; ?>
@@ -203,7 +203,7 @@ function render_footer(array $scripts = []): void {
 
 <dialog id="logout-modal" class="modal modal-sm">
   <div class="modal-body center-text">
-    <div class="logout-icon">&#128274;</div>
+    <div class="logout-icon"><?= icon('logout', 44) ?></div>
     <h2>Logout</h2>
     <p class="muted">Are you sure you want to logout?</p>
     <form method="post" action="<?= BASE_URL ?>/logout.php">
